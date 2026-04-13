@@ -123,11 +123,11 @@
             <ul class="space-y-4 text-sm text-slate-600 dark:text-slate-300 mb-8">
                 <li class="flex gap-3 items-start">
                     <span class="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 flex items-center justify-center font-bold shrink-0 mt-0.5">1</span> 
-                    <span>Lấy <b>API Key</b> miễn phí từ Google AI Studio và nhập vào nút màu vàng <b>"API Key"</b> bên góc trái.</span>
+                    <span>Lấy <b>API Key</b> miễn phí từ Google AI Studio và nhập vào bảng điều khiển bên trái.</span>
                 </li>
                 <li class="flex gap-3 items-start">
                     <span class="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 flex items-center justify-center font-bold shrink-0 mt-0.5">2</span> 
-                    <span>Nhập văn bản hoặc tải file PDF/Word vào khu vực soạn thảo ở giữa.</span>
+                    <span>Nhập văn bản, tải file PDF hoặc Word (.docx) vào khu vực soạn thảo ở giữa.</span>
                 </li>
                 <li class="flex gap-3 items-start">
                     <span class="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 flex items-center justify-center font-bold shrink-0 mt-0.5">3</span> 
@@ -139,7 +139,7 @@
                 </li>
             </ul>
             <button onclick="closeModalGuide()" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold transition-colors shadow-lg shadow-brand-500/30">
-                Bắt Đầu!
+                Đã Hiểu, Bắt Đầu Thôi!
             </button>
         </div>
     </div>
@@ -174,7 +174,7 @@
         <!-- Mobile Header & Toggle -->
         <div class="md:hidden fixed top-0 left-0 w-full h-14 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 z-[45] flex items-center justify-between px-4">
             <div class="flex items-center gap-2 font-extrabold text-lg text-brand-600 dark:text-brand-400">
-                <i class="fa-solid fa-microphone-lines"></i> Giọng Đọc Cổ Tích
+                <i class="fa-solid fa-microphone-lines"></i> Trợ lý tạo giọng đọc AI
             </div>
             <button onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('mobile-overlay').classList.toggle('hidden');" class="text-slate-600 dark:text-slate-300 p-2 text-xl">
                 <i class="fa-solid fa-bars"></i>
@@ -216,33 +216,32 @@
 
                 <!-- Phát triển bởi Card -->
                 <div>
-                    <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-regular fa-user"></i> About</p>
+                    <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-regular fa-user"></i> Tác giả</p>
                     <div class="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-blue-600/20 relative overflow-hidden">
                         <div class="absolute -right-4 -top-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
                         <div class="flex justify-between items-start mb-2 relative z-10">
                             <h3 class="font-extrabold text-lg">Talkys</h3>
-                            <span class="bg-white/20 text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm">v2.1</span>
+                            <span class="bg-white/20 text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm">v2.3</span>
                         </div>
                         <p class="text-blue-100 text-xs mb-4">Sử dụng công nghệ Text-To-Speech thông minh của Google Gemini AI.</p>
-                       
                     </div>
                 </div>
 
                 <!-- Voice Selection Card -->
                 <div>
-                    <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-solid fa-sliders"></i> Cấu hình</p>
+                    <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-solid fa-sliders"></i> Thông số âm thanh</p>
                     <div class="p-4 border border-blue-100 dark:border-blue-900/30 rounded-2xl bg-blue-50/50 dark:bg-blue-900/10 space-y-4">
                         
                         <div class="flex flex-col gap-1.5">
                             <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Chọn giọng đọc AI</label>
-                            <select id="voice-select" class="w-full bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800/50 rounded-xl px-3 py-2 outline-none focus:border-blue-500 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer shadow-sm">
-                                <option value="Aoede">Giọng Nữ 1</option>
-                                <option value="Kore">Giọng Nữ 2</option>
-                                <option value="Puck">Giọng Nam 1</option>
-                                <option value="Charon">Giọng Nam 2 </option>
-                                <option value="Fenrir">Giọng Nam 3 </option>
-                                <option value="Zephyr">Giọng Nam 4 </option>
+                            <select id="voice-select" onchange="updateVoiceDescription()" class="w-full bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800/50 rounded-xl px-3 py-2 outline-none focus:border-blue-500 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer shadow-sm">
+                                <!-- Sẽ được tạo bằng JavaScript -->
                             </select>
+                            
+                            <!-- Bảng mô tả chi tiết giọng đọc -->
+                            <div class="mt-1 p-2 bg-white/60 dark:bg-slate-800/60 rounded-lg border border-blue-50 dark:border-blue-900/50">
+                                <p id="voice-description" class="text-[10px] text-slate-600 dark:text-slate-300 italic leading-relaxed"></p>
+                            </div>
                         </div>
 
                         <div>
@@ -251,6 +250,19 @@
                                 <span id="speed-val" class="text-[11px] font-bold text-blue-600 dark:text-blue-400">1.0x (Chuẩn)</span>
                             </div>
                             <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1.0" oninput="document.getElementById('speed-val').innerText = this.value == 1 ? '1.0x (Chuẩn)' : this.value + 'x'">
+                        </div>
+                        
+                        <!-- Style Instructions -->
+                        <div class="pt-4 border-t border-blue-100 dark:border-blue-800/50">
+                            <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+                                <i class="fa-solid fa-masks-theater text-purple-500"></i> Phong cách đọc
+                            </label>
+                            <input type="text" id="voice-style" placeholder="VD: Vui vẻ, thì thầm, kịch tính..." class="w-full bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800/50 rounded-xl px-3 py-2 outline-none focus:border-purple-500 text-sm font-medium text-slate-700 dark:text-slate-200 shadow-sm transition-colors">
+                            <div class="flex flex-wrap gap-1.5 mt-2">
+                                <button onclick="document.getElementById('voice-style').value='Truyền cảm, chậm rãi, kể chuyện cho bé ngủ'" class="text-[10px] bg-purple-100 dark:bg-purple-900/40 hover:bg-purple-200 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-lg transition-colors border border-purple-200 dark:border-purple-800">Truyền cảm</button>
+                                <button onclick="document.getElementById('voice-style').value='Vui tươi, hào hứng, nhiều năng lượng'" class="text-[10px] bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 text-amber-700 dark:text-amber-300 px-2 py-1 rounded-lg transition-colors border border-amber-200 dark:border-amber-800">Vui tươi</button>
+                                <button onclick="document.getElementById('voice-style').value='Hồi hộp, bí ẩn, nói thì thầm'" class="text-[10px] bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-lg transition-colors border border-slate-300 dark:border-slate-600">Bí ẩn</button>
+                            </div>
                         </div>
 
                     </div>
@@ -281,7 +293,7 @@
             <!-- Loading Overlay (Tạo Giọng Đọc) -->
             <div id="processing-overlay" class="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-[60] hidden flex-col items-center justify-center m-4 md:m-8 rounded-[24px]">
                 <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4 shadow-lg shadow-blue-500/20"></div>
-                <h3 class="text-xl font-bold text-slate-800 dark:text-white">Đang tạo giọng đọc AI...</h3>
+               <h3 class="text-xl font-bold text-slate-800 dark:text-white">Đang tạo giọng đọc AI...</h3>
                 <p class="text-sm text-slate-500 mt-2 font-medium">Thời gian xử lý phụ thuộc vào độ dài văn bản.</p>
             </div>
 
@@ -310,8 +322,21 @@
     </div>
 
     <script>
+        // --- DATA GIỌNG ĐỌC (VOICES) ---
+        const geminiVoices = [
+            { id: 'Aoede', name: 'Aoede (Nữ)', desc: 'Giọng nữ thanh thoát, rõ ràng và tươi sáng. Rất phù hợp để đọc thơ hoặc kể chuyện cổ tích.' },
+            { id: 'Kore', name: 'Kore (Nữ)', desc: 'Giọng nữ tĩnh lặng, êm ái. Mang lại cảm giác bình yên, thích hợp cho kịch bản tâm lý nhẹ nhàng.' },
+            { id: 'Callirrhoe', name: 'Callirrhoe (Nữ)', desc: 'Giọng nữ ấm áp, vang và truyền cảm, tạo sự gắn kết với người nghe.' },
+            { id: 'Leda', name: 'Leda (Nữ)', desc: 'Giọng nữ linh hoạt, tự nhiên, thích hợp đọc tin tức hoặc văn bản giáo khoa dài.' },
+            { id: 'Puck', name: 'Puck (Nam)', desc: 'Giọng nam cao, năng động và trẻ trung. Thích hợp cho các nhân vật hoạt bát, vui vẻ.' },
+            { id: 'Zephyr', name: 'Zephyr (Nam)', desc: 'Giọng nam trung, tự nhiên, phong thái đĩnh đạc. Rất dễ nghe cho mọi loại văn bản chung.' },
+            { id: 'Charon', name: 'Charon (Nam)', desc: 'Giọng nam trầm, uy lực và chững chạc. Thích hợp kể truyện dã sử, tài liệu hùng biện.' },
+            { id: 'Fenrir', name: 'Fenrir (Nam)', desc: 'Giọng nam trầm ấm, mạnh mẽ, tạo độ tin cậy và dứt khoát cao.' },
+            { id: 'Orus', name: 'Orus (Nam)', desc: 'Giọng nam trung trầm, vang và vô cùng rõ ràng, thích hợp cho không gian lớp học.' }
+        ];
+
         // --- STATE & INITIALIZATION ---
-        let activeTab = null; // Cập nhật state ban đầu là null để đảm bảo lần đầu chạy luôn được render
+        let activeTab = null; 
         let conversionHistory = []; 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         let currentBuffer = null;
@@ -324,21 +349,48 @@
 
         // Khởi tạo ứng dụng
         window.addEventListener('DOMContentLoaded', () => {
-           // if (!localStorage.getItem('instruction_shown_v2')) {
-           //     openModalGuide();
-           // }
+            // Khởi tạo danh sách giọng đọc
+            const selectEl = document.getElementById('voice-select');
+            if (selectEl) {
+                selectEl.innerHTML = ''; // Clear old options
+                geminiVoices.forEach(voice => {
+                    const opt = document.createElement('option');
+                    opt.value = voice.id;
+                    opt.innerText = voice.name;
+                    selectEl.appendChild(opt);
+                });
+                updateVoiceDescription(); // Cập nhật mô tả lần đầu
+            }
+
+            // Đã tắt tự động hiển thị Hướng dẫn theo yêu cầu
+            // if (!localStorage.getItem('instruction_shown_v2')) {
+            //     openModalGuide();
+            // }
             
             // Khôi phục API Key
             const savedGeminiKey = localStorage.getItem('gemini_tts_api_key');
             if (savedGeminiKey) document.getElementById('api-key').value = savedGeminiKey;
             
-            // Khởi tạo thông tin bản quyền (Năm)
+            // Khởi tạo thông tin bản quyền
             const yearEl = document.getElementById('current-year');
             if (yearEl) yearEl.textContent = new Date().getFullYear();
 
             // Kích hoạt Tab Soạn Thảo mặc định
             setActiveTab('generator');
         });
+
+        // Hàm cập nhật mô tả khi thay đổi giọng đọc
+        function updateVoiceDescription() {
+            const selectEl = document.getElementById('voice-select');
+            const descEl = document.getElementById('voice-description');
+            if (!selectEl || !descEl) return;
+            
+            const selectedId = selectEl.value;
+            const voiceData = geminiVoices.find(v => v.id === selectedId);
+            if (voiceData) {
+                descEl.innerText = voiceData.desc;
+            }
+        }
 
         function saveApiKey() {
             const key = document.getElementById('api-key').value.trim();
@@ -422,22 +474,19 @@
         // --- NAVIGATION & TABS ---
         function setActiveTab(tab) {
             const content = document.getElementById('app-content');
-            // Nếu click lại vào tab hiện tại và content đã được render thì không render lại để tránh mất focus
             if (activeTab === tab && content && content.innerHTML.trim() !== '') return;
             
             activeTab = tab;
             
-            // Đổi màu tab đang chọn
             ['generator', 'history'].forEach(t => {
                 const el = document.getElementById(`nav-${t}`);
                 if(t === tab) el.className = `w-full text-left px-4 py-3 rounded-xl font-bold flex items-center gap-3 transition-all bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400`;
                 else el.className = `w-full text-left px-4 py-3 rounded-xl font-bold flex items-center gap-3 transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50`;
             });
 
-            // Tùy biến Header
             const headers = {
-                'generator': { badge: 'Soạn thảo', title: 'TẠO GIỌNG ĐỌC AI', desc: 'Nhập kịch bản, AI sẽ tổng hợp và chuyển đổi thành giọng nói.' },
-                'history': { badge: 'Lịch sử', title: 'LỊCH SỬ CHUYỂN ĐỔI', desc: 'Quản lý và tải lại các File âm thanh đã tạo.' }
+                'generator': { badge: 'Soạn thảo', title: 'TẠO GIỌNG ĐỌC AI', desc: 'Nhập kịch bản, cấu hình cảm xúc và AI sẽ tổng hợp thành giọng kể truyền cảm.' },
+                'history': { badge: 'Lịch sử', title: 'LỊCH SỬ CHUYỂN ĐỔI', desc: 'Quản lý và tải lại các file âm thanh đã tạo trong phiên làm việc hiện tại.' }
             };
 
             const h = headers[tab];
@@ -460,12 +509,10 @@
             const content = document.getElementById('app-content');
             if (!content) return;
             
-            // Dừng nhạc nếu đang phát khi chuyển tab
             stopAudio();
 
             if (activeTab === 'generator') {
                 content.innerHTML = renderGeneratorTab();
-                // Kích hoạt lại Event kéo thả File
                 const dropZone = document.getElementById('drag-overlay');
                 if(dropZone) {
                     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('active'); });
@@ -482,7 +529,6 @@
         }
 
         function renderGeneratorTab() {
-            // Giữ lại nội dung text nếu có chuyển tab qua lại
             const savedText = window._tempText || '';
             
             return `<div class="fade-in flex flex-col h-full">
@@ -492,7 +538,6 @@
                     <input type="file" id="file-upload" accept=".pdf,.docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleFileUpload(event)">
                     <p class="font-bold text-sm text-slate-700 dark:text-slate-200">Kéo thả File hoặc Click để tải lên</p>
                     <p class="text-xs text-slate-400 mt-1">Hệ thống sẽ tự động trích xuất chữ dán vào ô bên dưới.</p>
-                    <!-- Loading overlay for file parsing -->
                     <div id="file-loading" class="absolute inset-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm hidden flex-col items-center justify-center z-20">
                         <i class="fa-solid fa-spinner fa-spin text-3xl text-brand-500 mb-2"></i>
                         <span class="text-sm font-bold text-brand-600 dark:text-brand-400">Đang đọc dữ liệu...</span>
@@ -500,7 +545,7 @@
                 </div>
 
                 <!-- Text Input Area -->
-                <div class="mb-2 text-sm font-bold text-slate-700 dark:text-slate-300"><i class="fa-solid fa-keyboard mr-1 text-brand-500"></i> Nhập văn bản</div>
+                <div class="mb-2 text-sm font-bold text-slate-700 dark:text-slate-300"><i class="fa-solid fa-keyboard mr-1 text-brand-500"></i> Nhập văn bản kịch bản</div>
                 <div class="flex-1 relative flex flex-col bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden mb-6 min-h-[250px]">
                     <textarea id="main-text" oninput="window._tempText=this.value; document.getElementById('char-count').innerText=this.value.length.toLocaleString();" class="flex-1 w-full p-5 bg-transparent outline-none resize-none text-slate-700 dark:text-slate-200 text-base leading-relaxed custom-scrollbar" placeholder="Ngày xửa ngày xưa, ở một khu rừng nọ...">${savedText}</textarea>
                     
@@ -517,7 +562,7 @@
                     
                     <!-- Generate Button -->
                     <button id="btn-convert" onclick="convertToSpeech()" class="w-full md:w-auto shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-base px-8 py-3.5 rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 hover:-translate-y-0.5">
-                        Tạo Giọng Đọc
+                       Tạo Giọng Đọc
                     </button>
 
                     <!-- Audio Player UI -->
@@ -561,9 +606,15 @@
             }
             
             let html = `<div class="fade-in flex flex-col gap-4">`;
-            // Lặp ngược mảng để tệp mới nhất nằm trên cùng
             for (let i = conversionHistory.length - 1; i >= 0; i--) {
                 const item = conversionHistory[i];
+                
+                // Thêm huy hiệu (badge) Phong cách nếu có
+                let styleBadge = '';
+                if (item.style) {
+                    styleBadge = `<span class="text-xs font-medium text-purple-600 bg-purple-100 dark:bg-purple-900/40 dark:text-purple-300 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800/50 flex items-center gap-1.5"><i class="fa-solid fa-masks-theater"></i> ${item.style}</span>`;
+                }
+
                 html += `
                 <div class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 rounded-2xl p-5 shadow-sm flex flex-col xl:flex-row gap-5 items-start xl:items-center justify-between transition-colors">
                     <div class="flex-1 min-w-0 w-full">
@@ -572,12 +623,12 @@
                             <span class="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 flex items-center gap-1.5"><i class="fa-regular fa-clock"></i> ${item.timeStr}</span>
                             <span class="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-user-astronaut"></i> Giọng ${item.voice}</span>
                             <span class="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-gauge-high"></i> Tốc độ ${item.speed}x</span>
+                            ${styleBadge}
                         </div>
                         <p class="text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-2 w-full italic pr-4" title="${item.fullText}">"${item.snippet}"</p>
                     </div>
                     
                     <div class="flex items-center gap-4 shrink-0 w-full xl:w-auto justify-between xl:justify-end bg-slate-50 dark:bg-slate-900/50 p-2 xl:p-0 rounded-xl xl:bg-transparent xl:dark:bg-transparent">
-                        <!-- Native Audio Player for simple playback -->
                         <audio controls src="${item.blobUrl}" class="h-10 w-full max-w-[220px] outline-none rounded-lg"></audio>
                         
                         <a href="${item.blobUrl}" download="GiongDocCoTich_History_${item.id}.wav" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-colors shadow-sm text-sm shrink-0">
@@ -614,7 +665,7 @@
                     const result = await mammoth.extractRawText({arrayBuffer: arrayBuffer});
                     extractedText = result.value;
                 } else {
-                    throw new Error('Chỉ hỗ trợ file PDF hoặc Word (.docx)');
+                    throw new Error('Chỉ hỗ trợ File PDF hoặc Word (.docx)');
                 }
 
                 if (extractedText.trim()) {
@@ -628,13 +679,13 @@
                 }
             } catch (err) {
                 console.error(err);
-                showToast(err.message || 'Lỗi khi đọc file', 'error');
+                showToast(err.message || 'Lỗi khi đọc File', 'error');
             } finally {
                 if(loading) loading.style.display = 'none';
             }
         }
 
-        // --- AUDIO & PROGRESS TRACKING (For Main Generator) ---
+        // --- AUDIO & PROGRESS TRACKING ---
         function formatTime(seconds) {
             if (isNaN(seconds) || !isFinite(seconds)) return "00:00";
             const m = Math.floor(seconds / 60).toString().padStart(2, '0');
@@ -802,10 +853,17 @@
             return buffer;
         }
 
-        async function fetchGeminiTTS(text, apiKey, voiceName) {
+        async function fetchGeminiTTS(text, apiKey, voiceName, style = "") {
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+            
+            // Xử lý phong cách đọc (Nhúng instruction vào text gửi đi)
+            let finalPrompt = text;
+            if (style.trim() !== "") {
+                finalPrompt = `Hãy đọc đoạn văn bản sau với phong cách/cảm xúc: ${style}. Nội dung cần đọc:\n\n${text}`;
+            }
+
             const payload = {
-                contents: [{ parts: [{ text: text }] }],
+                contents: [{ parts: [{ text: finalPrompt }] }],
                 generationConfig: {
                     responseModalities: ["AUDIO"],
                     speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } } }
@@ -858,7 +916,7 @@
         }
 
         async function convertToSpeech() {
-            const apiKey = document.getElementById('api-key').value.trim();
+            const apiKey = document.getElementById('api-key') ? document.getElementById('api-key').value.trim() : localStorage.getItem('gemini_tts_api_key');
             if (!apiKey) {
                 openApiModal();
                 showToast('Vui lòng nhập Google Gemini API Key để tiếp tục!', 'error');
@@ -881,11 +939,15 @@
                 
                 const voiceName = document.getElementById('voice-select').value;
                 const speed = document.getElementById('speed').value;
+                // Lấy thông tin phong cách từ input mới
+                const styleInput = document.getElementById('voice-style');
+                const readingStyle = styleInput ? styleInput.value.trim() : "";
+
                 const chunks = chunkText(textToProcess);
                 const audioBuffers = [];
 
                 for (let i = 0; i < chunks.length; i++) {
-                    const buf = await fetchGeminiTTS(chunks[i], apiKey, voiceName);
+                    const buf = await fetchGeminiTTS(chunks[i], apiKey, voiceName, readingStyle);
                     audioBuffers.push(buf);
                     if(i < chunks.length - 1) await new Promise(r => setTimeout(r, 2000));
                 }
@@ -902,6 +964,7 @@
                     timeStr: now.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) + ' ' + now.toLocaleDateString('vi-VN'),
                     voice: voiceName,
                     speed: speed,
+                    style: readingStyle, // Lưu lại phong cách
                     fullText: textToProcess,
                     snippet: textToProcess.length > 100 ? textToProcess.substring(0, 100) + '...' : textToProcess,
                     blobUrl: blobUrl
@@ -915,7 +978,7 @@
                 }
 
                 enablePlayer();
-                showToast('🎉 Đã chuyển đổi xong! Bạn có thể nghe ngay hoặc xem ở tab Lịch sử.', 'success');
+                showToast('Đã chuyển dữ liệu xong! Bạn có thể nghe ngay hoặc xem ở tab Lịch sử.', 'success');
 
             } catch (err) {
                 console.error(err);
