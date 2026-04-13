@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="vi" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talkys - Trợ Lý Tạo Giọng Đọc AI</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Thư viện đọc file -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; scroll-behavior: smooth; }
+        
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Animations */
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideInUp 0.4s ease-out forwards; }
+        
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 14px; width: 14px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            margin-top: -4px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 5px;
+        }
+        .dark input[type=range]::-webkit-slider-runnable-track { background: #475569; }
+        
+        #drag-overlay.active {
+            background-color: rgba(59, 130, 246, 0.1);
+            border-color: #3b82f6;
+            border-style: solid;
+        }
+
+        /* Custom Audio Element */
+        audio::-webkit-media-controls-panel {
+            background-color: #f1f5f9;
+        }
+        .dark audio::-webkit-media-controls-panel {
+            background-color: #1e293b;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#0f172a] text-slate-800 dark:text-slate-100 transition-colors duration-300 overflow-hidden flex h-screen">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+    <div id="modal-root" class="z-[90] relative"></div>
+
+    <!-- Instruction Popup (Modal) -->
+    <div id="instruction-modal" class="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 transform scale-95 transition-transform duration-300 h-auto max-h-[90vh] overflow-y-auto custom-scrollbar" id="instruction-content">
+            <h3 class="text-2xl font-black text-brand-600 dark:text-brand-400 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Hướng Dẫn Nhanh
+            </h3>
+            <ul class="space-y-4 text-sm text-slate-600 dark:text-slate-300 mb-8">
+                <li class="flex gap-3 items-start">
+                    <span class="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 flex items-center justify-center font-bold shrink-0 mt-0.5">1</span> 
+                    <span>Lấy <b>API Key</b> miễn phí từ Google AI Studio và nhập vào nút màu vàng <b>"API Key"</b> bên góc trái.</span>
+                </li>
+                <li class="flex gap-3 items-start">
+                    <span class="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 flex items-center justify-center font-bold shrink-0 mt-0.5">2</span> 
+                    <span>Nhập văn bản hoặc tải file PDF/Word vào khu vực soạn thảo ở giữa.</span>
+                </li>
+                <li class="flex gap-3 items-start">
+                    <span class="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 flex items-center justify-center font-bold shrink-0 mt-0.5">3</span> 
+                    <span>Nhấn nút <b>"Tạo Giọng Đọc"</b> màu xanh và đợi hệ thống AI tổng hợp.</span>
+                </li>
+                <li class="flex gap-3 items-start">
+                    <span class="w-6 h-6 rounded-full bg-brand-100 dark:bg-brand-900/50 text-brand-600 flex items-center justify-center font-bold shrink-0 mt-0.5">4</span> 
+                    <span>Vào tab <b>"Lịch Sử"</b> để quản lý và tải lại các file cũ nếu cần thiết.</span>
+                </li>
+            </ul>
+            <button onclick="closeModalGuide()" class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold transition-colors shadow-lg shadow-brand-500/30">
+                Bắt Đầu!
+            </button>
+        </div>
+    </div>
+
+    <!-- API Config Popup (Modal) -->
+    <div id="api-modal" class="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 transform scale-95 transition-transform duration-300" id="api-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-black text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                    <i class="fa-solid fa-key"></i> Cấu hình API
+                </h3>
+                <button onclick="closeApiModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors bg-slate-100 dark:bg-slate-700 w-8 h-8 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="flex flex-col gap-2 p-5 border border-amber-100 dark:border-amber-900/30 rounded-2xl bg-amber-50/50 dark:bg-amber-900/10 mb-8 shadow-inner">
+                <label class="text-xs font-bold text-amber-800 dark:text-amber-300 mb-1">Google Gemini API Key</label>
+                <input type="password" id="api-key" placeholder="Nhập API Key tại đây..." class="w-full bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800/50 rounded-xl px-4 py-3 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 text-sm font-mono transition-all" onchange="saveApiKey()">
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                    Đăng ký và lấy Key miễn phí tại <a href="https://aistudio.google.com/" target="_blank" class="text-amber-600 dark:text-amber-400 hover:underline font-bold">Google AI Studio</a>. (Giới hạn: 1 triệu token/ngày). Mọi xử lý đều ẩn danh và bảo mật 100%.
+                </p>
+            </div>
+            <button onclick="saveApiKeyAndClose()" class="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-lg transition-all shadow-lg shadow-amber-500/30 hover:-translate-y-0.5">
+                Lưu Thay Đổi
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN APP STRUCTURE -->
+    <div id="main-app" class="flex w-full relative h-screen overflow-hidden">
+        
+        <!-- Mobile Header & Toggle -->
+        <div class="md:hidden fixed top-0 left-0 w-full h-14 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-800 z-[45] flex items-center justify-between px-4">
+            <div class="flex items-center gap-2 font-extrabold text-lg text-brand-600 dark:text-brand-400">
+                <i class="fa-solid fa-microphone-lines"></i> Giọng Đọc Cổ Tích
+            </div>
+            <button onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full'); document.getElementById('mobile-overlay').classList.toggle('hidden');" class="text-slate-600 dark:text-slate-300 p-2 text-xl">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+
+        <!-- Left Sidebar -->
+        <aside id="sidebar" class="w-[300px] flex-shrink-0 bg-white dark:bg-[#111827] border-r border-slate-200/80 dark:border-slate-800 flex flex-col h-full absolute md:relative z-[40] transform -translate-x-full md:translate-x-0 transition-transform duration-300 mt-14 md:mt-0 shadow-xl md:shadow-none">
+            
+            <!-- App Header -->
+            <div class="shrink-0 p-6 pb-4 hidden md:flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-600 dark:bg-brand-900/50 dark:text-brand-400 flex items-center justify-center text-xl shadow-sm">
+                        <i class="fa-solid fa-microphone-lines"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-lg text-slate-800 dark:text-slate-100 tracking-tight leading-tight">Talkys</h1>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trợ lý tạo giọng đọc AI</p>
+                    </div>
+                </div>
+                <button onclick="openModalGuide()" class="text-slate-400 hover:text-brand-500 transition-colors" title="Hướng dẫn">
+                    <i class="fa-solid fa-circle-question text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Scrollable Menu -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar px-5 pb-6 space-y-6 mt-4 md:mt-0">
+                
+                <!-- Navigation Tabs -->
+                <div class="space-y-1">
+                    <button onclick="setActiveTab('generator'); if(window.innerWidth < 768) { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('mobile-overlay').classList.add('hidden'); }" id="nav-generator" class="w-full text-left px-4 py-3 rounded-xl font-bold flex items-center gap-3 transition-all bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                        <i class="fa-solid fa-wand-magic-sparkles w-5 text-center"></i> Soạn Thảo
+                    </button>
+                    <button onclick="setActiveTab('history'); if(window.innerWidth < 768) { document.getElementById('sidebar').classList.add('-translate-x-full'); document.getElementById('mobile-overlay').classList.add('hidden'); }" id="nav-history" class="w-full text-left px-4 py-3 rounded-xl font-bold flex items-center gap-3 transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <i class="fa-solid fa-clock-rotate-left w-5 text-center"></i> Lịch Sử
+                        <span id="history-badge" class="ml-auto bg-slate-200 dark:bg-slate-700 text-[10px] px-2 py-0.5 rounded-full hidden">0</span>
+                    </button>
+                </div>
+
+                <!-- Phát triển bởi Card -->
+                <div>
+                    <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-regular fa-user"></i> About</p>
+                    <div class="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-blue-600/20 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
+                        <div class="flex justify-between items-start mb-2 relative z-10">
+                            <h3 class="font-extrabold text-lg">Talkys</h3>
+                            <span class="bg-white/20 text-[10px] font-bold px-1.5 py-0.5 rounded backdrop-blur-sm">v2.1</span>
+                        </div>
+                        <p class="text-blue-100 text-xs mb-4">Sử dụng công nghệ Text-To-Speech thông minh của Google Gemini AI.</p>
+                       
+                    </div>
+                </div>
+
+                <!-- Voice Selection Card -->
+                <div>
+                    <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2"><i class="fa-solid fa-sliders"></i> Cấu hình</p>
+                    <div class="p-4 border border-blue-100 dark:border-blue-900/30 rounded-2xl bg-blue-50/50 dark:bg-blue-900/10 space-y-4">
+                        
+                        <div class="flex flex-col gap-1.5">
+                            <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Chọn giọng đọc AI</label>
+                            <select id="voice-select" class="w-full bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-800/50 rounded-xl px-3 py-2 outline-none focus:border-blue-500 text-sm font-medium text-slate-700 dark:text-slate-200 cursor-pointer shadow-sm">
+                                <option value="Aoede">Giọng Nữ 1</option>
+                                <option value="Kore">Giọng Nữ 2</option>
+                                <option value="Puck">Giọng Nam 1</option>
+                                <option value="Charon">Giọng Nam 2 </option>
+                                <option value="Fenrir">Giọng Nam 3 </option>
+                                <option value="Zephyr">Giọng Nam 4 </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between mb-1.5">
+                                <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Tốc độ phát</label>
+                                <span id="speed-val" class="text-[11px] font-bold text-blue-600 dark:text-blue-400">1.0x (Chuẩn)</span>
+                            </div>
+                            <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1.0" oninput="document.getElementById('speed-val').innerText = this.value == 1 ? '1.0x (Chuẩn)' : this.value + 'x'">
+                        </div>
+
+                    </div>
+                </div>
+                
+            </div>
+
+            <!-- Footer Settings & Dark Mode -->
+            <div class="shrink-0 p-4 border-t border-slate-200/80 dark:border-slate-800 flex gap-3">
+                <button onclick="openApiModal()" class="flex-1 flex justify-center items-center gap-2 px-3 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 font-bold text-sm hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors shadow-sm" title="Cấu hình API Key">
+                    <i class="fa-solid fa-key"></i> <span>API Key</span>
+                </button>
+                <button onclick="toggleDarkMode()" class="flex-1 flex justify-center items-center gap-2 px-3 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-sm" title="Chế độ Tối/Sáng">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+                    <span class="dark:hidden">Giao diện</span>
+                    <span class="hidden dark:inline">Giao diện</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Overlay for mobile -->
+        <div onclick="document.getElementById('sidebar').classList.add('-translate-x-full'); this.classList.add('hidden');" class="fixed inset-0 bg-slate-900/50 z-30 hidden md:hidden backdrop-blur-sm" id="mobile-overlay"></div>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col h-full relative mt-14 md:mt-0 bg-slate-50 dark:bg-[#0f172a]">
+            
+            <!-- Loading Overlay (Tạo Giọng Đọc) -->
+            <div id="processing-overlay" class="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-[60] hidden flex-col items-center justify-center m-4 md:m-8 rounded-[24px]">
+                <div class="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4 shadow-lg shadow-blue-500/20"></div>
+                <h3 class="text-xl font-bold text-slate-800 dark:text-white">Đang tạo giọng đọc AI...</h3>
+                <p class="text-sm text-slate-500 mt-2 font-medium">Thời gian xử lý phụ thuộc vào độ dài văn bản.</p>
+            </div>
+
+            <!-- Khu vực Content có Footer cố định dưới cùng -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col p-4 md:p-8" id="scroll-container">
+                
+                <!-- Dynamic Header -->
+                <div id="dynamic-header" class="fade-in mt-2 md:mt-4 mb-8 shrink-0"></div>
+
+                <!-- Dynamic Content Container -->
+                <div class="max-w-[1200px] mx-auto w-full relative mb-8 shrink-0">
+                    <div class="bg-white dark:bg-[#111827] rounded-[24px] shadow-sm border border-slate-200 dark:border-slate-800 relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-purple-500"></div>
+                        <div class="p-5 md:p-8 min-h-[500px]" id="app-content"></div>
+                    </div>
+                </div>
+
+                <!-- Footer Bản Quyền Chân Trang -->
+                <footer class="mt-auto text-center pt-8 pb-2 shrink-0">
+                    <p class="text-sm font-bold text-slate-600 dark:text-slate-400">
+                        &copy; <span id="current-year"></span> : Talkys - Tạo giọng đọc AI. <p class="text-sm font-bold text-slate-600 dark:text-slate-400">Copyright <a href="https://github.com/nh4thuy" target="_blank" class="text-blue-500 hover:underline">Nh4tHuy</a></p>
+                    </p>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- STATE & INITIALIZATION ---
+        let activeTab = null; // Cập nhật state ban đầu là null để đảm bảo lần đầu chạy luôn được render
+        let conversionHistory = []; 
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let currentBuffer = null;
+        let sourceNode = null;
+        let isPlaying = false;
+        let startTime = 0;
+        let pauseTime = 0;
+        let isSeeking = false;
+        let animationFrameId;
+
+        // Khởi tạo ứng dụng
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('instruction_shown_v2')) {
+                openModalGuide();
+            }
+            
+            // Khôi phục API Key
+            const savedGeminiKey = localStorage.getItem('gemini_tts_api_key');
+            if (savedGeminiKey) document.getElementById('api-key').value = savedGeminiKey;
+            
+            // Khởi tạo thông tin bản quyền (Năm)
+            const yearEl = document.getElementById('current-year');
+            if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+            // Kích hoạt Tab Soạn Thảo mặc định
+            setActiveTab('generator');
+        });
+
+        function saveApiKey() {
+            const key = document.getElementById('api-key').value.trim();
+            if (key) localStorage.setItem('gemini_tts_api_key', key);
+        }
+
+        // --- UI, THEME & MODAL LOGIC ---
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bg = type === 'error' ? 'bg-white dark:bg-slate-800 border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400' 
+                                        : 'bg-white dark:bg-slate-800 border-emerald-100 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400';
+            const icon = type === 'error' ? '<i class="fa-solid fa-circle-exclamation text-red-500"></i>' : '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
+            toast.className = `flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border ${bg} transform transition-all duration-300 translate-y-10 opacity-0`;
+            toast.innerHTML = `<div class="text-lg">${icon}</div><div class="font-bold text-sm">${msg}</div>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-10', 'opacity-0'), 10);
+            setTimeout(() => { toast.classList.add('translate-y-10', 'opacity-0'); setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        function openModalGuide() {
+            const modal = document.getElementById('instruction-modal');
+            const content = document.getElementById('instruction-content');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeModalGuide() {
+            const modal = document.getElementById('instruction-modal');
+            const content = document.getElementById('instruction-content');
+            modal.classList.add('opacity-0');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            localStorage.setItem('instruction_shown_v2', 'true');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+        
+        function openApiModal() {
+            const modal = document.getElementById('api-modal');
+            const content = document.getElementById('api-content');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeApiModal() {
+            const modal = document.getElementById('api-modal');
+            const content = document.getElementById('api-content');
+            modal.classList.add('opacity-0');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+
+        function saveApiKeyAndClose() {
+            saveApiKey();
+            closeApiModal();
+            showToast('Đã lưu API Key thành công!', 'success');
+        }
+
+        // --- NAVIGATION & TABS ---
+        function setActiveTab(tab) {
+            const content = document.getElementById('app-content');
+            // Nếu click lại vào tab hiện tại và content đã được render thì không render lại để tránh mất focus
+            if (activeTab === tab && content && content.innerHTML.trim() !== '') return;
+            
+            activeTab = tab;
+            
+            // Đổi màu tab đang chọn
+            ['generator', 'history'].forEach(t => {
+                const el = document.getElementById(`nav-${t}`);
+                if(t === tab) el.className = `w-full text-left px-4 py-3 rounded-xl font-bold flex items-center gap-3 transition-all bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400`;
+                else el.className = `w-full text-left px-4 py-3 rounded-xl font-bold flex items-center gap-3 transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50`;
+            });
+
+            // Tùy biến Header
+            const headers = {
+                'generator': { badge: 'Soạn thảo', title: 'TẠO GIỌNG ĐỌC AI', desc: 'Nhập kịch bản, AI sẽ tổng hợp và chuyển đổi thành giọng nói.' },
+                'history': { badge: 'Lịch sử', title: 'LỊCH SỬ CHUYỂN ĐỔI', desc: 'Quản lý và tải lại các File âm thanh đã tạo.' }
+            };
+
+            const h = headers[tab];
+            document.getElementById('dynamic-header').innerHTML = `
+                <div class="text-center animate-slide-up">
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white dark:bg-[#1f2937] border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 mb-4 shadow-sm transition-colors">
+                        <i class="fa-solid fa-link text-blue-500"></i>
+                        <span>${h.badge}</span>
+                        <i class="fa-solid fa-circle-check text-emerald-500 ml-1"></i>
+                    </div>
+                    <br/>
+                    <h2 class="text-3xl md:text-5xl font-black uppercase tracking-tight mb-3 leading-tight"><span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-600">${h.title}</span></h2>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm md:text-base font-medium max-w-lg mx-auto">${h.desc}</p>
+                </div>`;
+
+            renderAll();
+        }
+
+        function renderAll() {
+            const content = document.getElementById('app-content');
+            if (!content) return;
+            
+            // Dừng nhạc nếu đang phát khi chuyển tab
+            stopAudio();
+
+            if (activeTab === 'generator') {
+                content.innerHTML = renderGeneratorTab();
+                // Kích hoạt lại Event kéo thả File
+                const dropZone = document.getElementById('drag-overlay');
+                if(dropZone) {
+                    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('active'); });
+                    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'));
+                    dropZone.addEventListener('drop', (e) => {
+                        e.preventDefault(); dropZone.classList.remove('active');
+                        if (e.dataTransfer.files.length) processFile(e.dataTransfer.files[0]);
+                    });
+                }
+            }
+            else if (activeTab === 'history') {
+                content.innerHTML = renderHistoryTab();
+            }
+        }
+
+        function renderGeneratorTab() {
+            // Giữ lại nội dung text nếu có chuyển tab qua lại
+            const savedText = window._tempText || '';
+            
+            return `<div class="fade-in flex flex-col h-full">
+                <!-- File Upload Area -->
+                <div class="mb-2 text-sm font-bold text-slate-700 dark:text-slate-300"><i class="fa-solid fa-file-import mr-1 text-brand-500"></i> Nhập File (Word/PDF)</div>
+                <div id="drag-overlay" class="mb-5 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl bg-slate-50/50 dark:bg-slate-800/30 p-5 flex flex-col items-center justify-center text-center transition-all duration-200 relative overflow-hidden group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 hover:border-blue-300">
+                    <input type="file" id="file-upload" accept=".pdf,.docx" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleFileUpload(event)">
+                    <p class="font-bold text-sm text-slate-700 dark:text-slate-200">Kéo thả File hoặc Click để tải lên</p>
+                    <p class="text-xs text-slate-400 mt-1">Hệ thống sẽ tự động trích xuất chữ dán vào ô bên dưới.</p>
+                    <!-- Loading overlay for file parsing -->
+                    <div id="file-loading" class="absolute inset-0 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm hidden flex-col items-center justify-center z-20">
+                        <i class="fa-solid fa-spinner fa-spin text-3xl text-brand-500 mb-2"></i>
+                        <span class="text-sm font-bold text-brand-600 dark:text-brand-400">Đang đọc dữ liệu...</span>
+                    </div>
+                </div>
+
+                <!-- Text Input Area -->
+                <div class="mb-2 text-sm font-bold text-slate-700 dark:text-slate-300"><i class="fa-solid fa-keyboard mr-1 text-brand-500"></i> Nhập văn bản</div>
+                <div class="flex-1 relative flex flex-col bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden mb-6 min-h-[250px]">
+                    <textarea id="main-text" oninput="window._tempText=this.value; document.getElementById('char-count').innerText=this.value.length.toLocaleString();" class="flex-1 w-full p-5 bg-transparent outline-none resize-none text-slate-700 dark:text-slate-200 text-base leading-relaxed custom-scrollbar" placeholder="Ngày xửa ngày xưa, ở một khu rừng nọ...">${savedText}</textarea>
+                    
+                    <div class="px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 flex justify-between items-center">
+                        <button onclick="document.getElementById('main-text').value=''; window._tempText=''; document.getElementById('char-count').innerText='0'" class="text-xs font-bold text-slate-400 hover:text-red-500 transition-colors px-2 py-1 flex items-center gap-1.5"><i class="fa-solid fa-trash-can"></i> Xóa tất cả</button>
+                        <div class="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <span id="char-count" class="text-brand-600 dark:text-brand-400">${savedText.length.toLocaleString()}</span> ký tự
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action & Player Area -->
+                <div class="shrink-0 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm relative overflow-hidden flex flex-col md:flex-row items-center gap-5 transition-all" id="action-bar">
+                    
+                    <!-- Generate Button -->
+                    <button id="btn-convert" onclick="convertToSpeech()" class="w-full md:w-auto shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-base px-8 py-3.5 rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 hover:-translate-y-0.5">
+                        Tạo Giọng Đọc
+                    </button>
+
+                    <!-- Audio Player UI -->
+                    <div id="player-container" class="flex-1 w-full flex items-center justify-between gap-4 opacity-40 pointer-events-none transition-all duration-500">
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button id="btn-play" onclick="togglePlay()" class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400 flex items-center justify-center text-lg hover:bg-blue-200 dark:hover:bg-blue-900 transition-colors">
+                                <i class="fa-solid fa-play ml-1"></i>
+                            </button>
+                            <button onclick="stopAudio()" class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors" title="Dừng">
+                                <i class="fa-solid fa-stop"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Progress & Time Display -->
+                        <div class="flex-1 flex flex-col justify-center px-1">
+                            <input type="range" id="seek-bar" value="0" min="0" max="100" step="0.1" style="accent-color: #3b82f6;" oninput="onSeekInput()" onchange="onSeekChange()">
+                            <div class="flex justify-between text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1">
+                                <span id="current-time">00:00</span>
+                                <span id="total-time">00:00</span>
+                            </div>
+                        </div>
+
+                        <!-- Download -->
+                        <button id="btn-download" onclick="downloadCurrentWav()" class="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors border border-emerald-200 dark:border-emerald-800/50 text-sm">
+                            <i class="fa-solid fa-download"></i> <span class="hidden md:inline">Tải File (.wav)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function renderHistoryTab() {
+            if(conversionHistory.length === 0) {
+                return `<div class="py-24 text-center fade-in">
+                    <div class="w-24 h-24 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 text-slate-300 dark:text-slate-600 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl shadow-inner">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-800 dark:text-slate-100 mb-3">Chưa có lịch sử chuyển đổi</h3>
+                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-md mx-auto">Khi bạn tạo thành công một giọng đọc ở tab Soạn thảo, kết quả sẽ được lưu tạm thời vào đây để bạn dễ dàng quản lý và tải lại.</p>
+                </div>`;
+            }
+            
+            let html = `<div class="fade-in flex flex-col gap-4">`;
+            // Lặp ngược mảng để tệp mới nhất nằm trên cùng
+            for (let i = conversionHistory.length - 1; i >= 0; i--) {
+                const item = conversionHistory[i];
+                html += `
+                <div class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 rounded-2xl p-5 shadow-sm flex flex-col xl:flex-row gap-5 items-start xl:items-center justify-between transition-colors">
+                    <div class="flex-1 min-w-0 w-full">
+                        <div class="flex flex-wrap items-center gap-2 mb-2.5">
+                            <span class="text-[10px] font-black bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800/50">#${i + 1}</span>
+                            <span class="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 flex items-center gap-1.5"><i class="fa-regular fa-clock"></i> ${item.timeStr}</span>
+                            <span class="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-user-astronaut"></i> Giọng ${item.voice}</span>
+                            <span class="text-xs font-medium text-slate-500 bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-gauge-high"></i> Tốc độ ${item.speed}x</span>
+                        </div>
+                        <p class="text-sm font-medium text-slate-700 dark:text-slate-300 line-clamp-2 w-full italic pr-4" title="${item.fullText}">"${item.snippet}"</p>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 shrink-0 w-full xl:w-auto justify-between xl:justify-end bg-slate-50 dark:bg-slate-900/50 p-2 xl:p-0 rounded-xl xl:bg-transparent xl:dark:bg-transparent">
+                        <!-- Native Audio Player for simple playback -->
+                        <audio controls src="${item.blobUrl}" class="h-10 w-full max-w-[220px] outline-none rounded-lg"></audio>
+                        
+                        <a href="${item.blobUrl}" download="GiongDocCoTich_History_${item.id}.wav" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-colors shadow-sm text-sm shrink-0">
+                            <i class="fa-solid fa-download"></i> Tải File (.wav)
+                        </a>
+                    </div>
+                </div>`;
+            }
+            html += `</div>`;
+            return html;
+        }
+
+        // --- FILE PARSING (PDF & WORD) ---
+        function handleFileUpload(e) {
+            if (e.target.files.length) processFile(e.target.files[0]);
+            e.target.value = '';
+        }
+
+        async function processFile(file) {
+            const loading = document.getElementById('file-loading');
+            if(loading) loading.style.display = 'flex';
+            try {
+                let extractedText = '';
+                const arrayBuffer = await file.arrayBuffer();
+                
+                if (file.name.toLowerCase().endsWith('.pdf')) {
+                    const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const content = await page.getTextContent();
+                        extractedText += content.items.map(item => item.str).join(' ') + '\n';
+                    }
+                } else if (file.name.toLowerCase().endsWith('.docx')) {
+                    const result = await mammoth.extractRawText({arrayBuffer: arrayBuffer});
+                    extractedText = result.value;
+                } else {
+                    throw new Error('Chỉ hỗ trợ file PDF hoặc Word (.docx)');
+                }
+
+                if (extractedText.trim()) {
+                    const ta = document.getElementById('main-text');
+                    ta.value = (ta.value + '\n\n' + extractedText.trim()).trim();
+                    window._tempText = ta.value;
+                    document.getElementById('char-count').innerText = ta.value.length.toLocaleString();
+                    showToast(`Đã tải thành công ${file.name}`);
+                } else {
+                    showToast('File trống hoặc không thể đọc chữ', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast(err.message || 'Lỗi khi đọc file', 'error');
+            } finally {
+                if(loading) loading.style.display = 'none';
+            }
+        }
+
+        // --- AUDIO & PROGRESS TRACKING (For Main Generator) ---
+        function formatTime(seconds) {
+            if (isNaN(seconds) || !isFinite(seconds)) return "00:00";
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function setUIState(playing) {
+            isPlaying = playing;
+            const btnPlay = document.getElementById('btn-play');
+            if (playing) {
+                if (btnPlay) btnPlay.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                updateProgress(); 
+            } else {
+                if (btnPlay) btnPlay.innerHTML = '<i class="fa-solid fa-play ml-1"></i>';
+                cancelAnimationFrame(animationFrameId);
+            }
+        }
+
+        function updateProgress() {
+            if (!isPlaying || !currentBuffer) return;
+            const speedMultiplier = parseFloat(document.getElementById('speed').value);
+            let currentTime = (audioCtx.currentTime - startTime) * speedMultiplier;
+            if (currentTime >= currentBuffer.duration) {
+                currentTime = currentBuffer.duration;
+            }
+            
+            const currTimeEl = document.getElementById('current-time');
+            if (currTimeEl) currTimeEl.innerText = formatTime(currentTime);
+            
+            const seekBarEl = document.getElementById('seek-bar');
+            if (seekBarEl) seekBarEl.value = (currentTime / currentBuffer.duration) * 100;
+            
+            animationFrameId = requestAnimationFrame(updateProgress);
+        }
+
+        function onSeekInput() {
+            if (!currentBuffer) return;
+            const seekBarEl = document.getElementById('seek-bar');
+            if (!seekBarEl) return;
+            const percent = seekBarEl.value;
+            const newTime = (percent / 100) * currentBuffer.duration;
+            const currTimeEl = document.getElementById('current-time');
+            if (currTimeEl) currTimeEl.innerText = formatTime(newTime);
+        }
+
+        function onSeekChange() {
+            if (!currentBuffer) return;
+            const seekBarEl = document.getElementById('seek-bar');
+            if (!seekBarEl) return;
+            const percent = seekBarEl.value;
+            const newTime = (percent / 100) * currentBuffer.duration;
+            pauseTime = newTime;
+            if (isPlaying) {
+                stopAudio(true); 
+                playBuffer(newTime); 
+            }
+        }
+
+        function playBuffer(offset = 0) {
+            if (!currentBuffer) return;
+            if (sourceNode) sourceNode.disconnect();
+            
+            sourceNode = audioCtx.createBufferSource();
+            sourceNode.buffer = currentBuffer;
+            sourceNode.connect(audioCtx.destination);
+            
+            const speedMultiplier = parseFloat(document.getElementById('speed').value);
+            sourceNode.playbackRate.value = speedMultiplier;
+            
+            sourceNode.onended = () => {
+                if (isPlaying && !isSeeking) {
+                    setUIState(false);
+                    pauseTime = 0;
+                    const seekBar = document.getElementById('seek-bar');
+                    const currTime = document.getElementById('current-time');
+                    if (seekBar) seekBar.value = 0;
+                    if (currTime) currTime.innerText = "00:00";
+                }
+            };
+
+            sourceNode.start(0, offset);
+            startTime = audioCtx.currentTime - (offset / speedMultiplier);
+            setUIState(true);
+            isSeeking = false;
+        }
+
+        function togglePlay() {
+            if (!currentBuffer) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            if (isPlaying) {
+                const speedMultiplier = parseFloat(document.getElementById('speed').value);
+                sourceNode.stop();
+                pauseTime = (audioCtx.currentTime - startTime) * speedMultiplier;
+                setUIState(false);
+            } else {
+                playBuffer(pauseTime);
+            }
+        }
+
+        function stopAudio(seeking = false) {
+            isSeeking = seeking;
+            if (sourceNode && isPlaying) {
+                sourceNode.stop();
+            }
+            if (!seeking) {
+                pauseTime = 0;
+                setUIState(false);
+                const seekBar = document.getElementById('seek-bar');
+                const currTime = document.getElementById('current-time');
+                if(seekBar) seekBar.value = 0;
+                if(currTime) currTime.innerText = "00:00";
+            }
+        }
+
+        function enablePlayer() {
+            const player = document.getElementById('player-container');
+            const actionBar = document.getElementById('action-bar');
+            if(player && actionBar) {
+                player.classList.remove('opacity-40', 'pointer-events-none');
+                actionBar.classList.add('ring-2', 'ring-emerald-500/50', 'bg-emerald-50/30', 'dark:bg-emerald-900/10');
+            }
+            
+            const total = document.getElementById('total-time');
+            const curr = document.getElementById('current-time');
+            const seek = document.getElementById('seek-bar');
+            
+            if(total) total.innerText = formatTime(currentBuffer.duration);
+            if(curr) curr.innerText = "00:00";
+            if(seek) seek.value = 0;
+            
+            stopAudio();
+        }
+
+        // --- GEMINI TTS LOGIC & HISTORY ---
+        function chunkText(text, maxLen = 2000) {
+            const chunks = [];
+            let currentChunk = "";
+            const sentences = text.match(/[^.!?\n]+[.!?\n]+/g) || [text];
+            for (let s of sentences) {
+                if (currentChunk.length + s.length > maxLen) {
+                    if (currentChunk) chunks.push(currentChunk.trim());
+                    currentChunk = s;
+                } else {
+                    currentChunk += s;
+                }
+            }
+            if (currentChunk.trim()) chunks.push(currentChunk.trim());
+            return chunks;
+        }
+
+        function pcm16Base64ToAudioBuffer(base64Data, sampleRate = 24000) {
+            const binaryString = window.atob(base64Data);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+            
+            const int16Array = new Int16Array(bytes.buffer);
+            const float32Array = new Float32Array(int16Array.length);
+            for (let i = 0; i < int16Array.length; i++) float32Array[i] = int16Array[i] / 32768.0;
+            
+            const buffer = audioCtx.createBuffer(1, float32Array.length, sampleRate);
+            buffer.getChannelData(0).set(float32Array);
+            return buffer;
+        }
+
+        async function fetchGeminiTTS(text, apiKey, voiceName) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: text }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceName } } }
+                }
+            };
+
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error?.message || "Lỗi khi kết nối với Gemini API");
+            }
+
+            const data = await res.json();
+            let inlineData = null;
+            const parts = data.candidates?.[0]?.content?.parts || [];
+            for (let part of parts) {
+                if (part.inlineData && part.inlineData.mimeType.includes("audio")) {
+                    inlineData = part.inlineData; break;
+                }
+            }
+
+            if (!inlineData || !inlineData.data) throw new Error("Không nhận được dữ liệu âm thanh từ Gemini. Hãy thử đổi câu văn khác.");
+
+            let sampleRate = 24000;
+            const rateMatch = inlineData.mimeType.match(/rate=(\d+)/);
+            if (rateMatch && rateMatch[1]) sampleRate = parseInt(rateMatch[1], 10);
+
+            return pcm16Base64ToAudioBuffer(inlineData.data, sampleRate);
+        }
+
+        function concatAudioBuffers(buffers) {
+            if (buffers.length === 0) return null;
+            if (buffers.length === 1) return buffers[0];
+
+            let totalLength = 0;
+            buffers.forEach(b => totalLength += b.length);
+            
+            const result = audioCtx.createBuffer(buffers[0].numberOfChannels, totalLength, buffers[0].sampleRate);
+            for (let channel = 0; channel < buffers[0].numberOfChannels; channel++) {
+                const channelData = result.getChannelData(channel);
+                let offset = 0;
+                buffers.forEach(b => { channelData.set(b.getChannelData(channel), offset); offset += b.length; });
+            }
+            return result;
+        }
+
+        async function convertToSpeech() {
+            const apiKey = document.getElementById('api-key').value.trim();
+            if (!apiKey) {
+                openApiModal();
+                showToast('Vui lòng nhập Google Gemini API Key để tiếp tục!', 'error');
+                return;
+            }
+
+            const ta = document.getElementById('main-text');
+            const textToProcess = ta ? ta.value.trim() : '';
+            if (!textToProcess) {
+                showToast('Vui lòng nhập nội dung cần đọc!', 'error');
+                return;
+            }
+
+            const overlay = document.getElementById('processing-overlay');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+
+            try {
+                if(audioCtx.state === 'suspended') await audioCtx.resume();
+                
+                const voiceName = document.getElementById('voice-select').value;
+                const speed = document.getElementById('speed').value;
+                const chunks = chunkText(textToProcess);
+                const audioBuffers = [];
+
+                for (let i = 0; i < chunks.length; i++) {
+                    const buf = await fetchGeminiTTS(chunks[i], apiKey, voiceName);
+                    audioBuffers.push(buf);
+                    if(i < chunks.length - 1) await new Promise(r => setTimeout(r, 2000));
+                }
+
+                currentBuffer = concatAudioBuffers(audioBuffers);
+                
+                // Tạo file WAV và đẩy vào Lịch sử
+                const wavBlob = audioBufferToWav(currentBuffer);
+                const blobUrl = URL.createObjectURL(wavBlob);
+                
+                const now = new Date();
+                conversionHistory.push({
+                    id: Date.now(),
+                    timeStr: now.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) + ' ' + now.toLocaleDateString('vi-VN'),
+                    voice: voiceName,
+                    speed: speed,
+                    fullText: textToProcess,
+                    snippet: textToProcess.length > 100 ? textToProcess.substring(0, 100) + '...' : textToProcess,
+                    blobUrl: blobUrl
+                });
+
+                // Cập nhật Badge Lịch sử
+                const badge = document.getElementById('history-badge');
+                if(badge) {
+                    badge.innerText = conversionHistory.length;
+                    badge.classList.remove('hidden');
+                }
+
+                enablePlayer();
+                showToast('🎉 Đã chuyển đổi xong! Bạn có thể nghe ngay hoặc xem ở tab Lịch sử.', 'success');
+
+            } catch (err) {
+                console.error(err);
+                showToast(err.message, 'error');
+            } finally {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+            }
+        }
+
+        // --- WAV EXPORTER ---
+        function audioBufferToWav(buffer) {
+            const numOfChan = buffer.numberOfChannels;
+            const length = buffer.length * numOfChan * 2 + 44;
+            const bufferData = new ArrayBuffer(length);
+            const view = new DataView(bufferData);
+            const channels = [];
+            let i, sample, offset = 0, pos = 0;
+
+            function setUint16(data) { view.setUint16(pos, data, true); pos += 2; }
+            function setUint32(data) { view.setUint32(pos, data, true); pos += 4; }
+
+            setUint32(0x46464952); setUint32(length - 8); setUint32(0x45564157);
+            setUint32(0x20746d66); setUint32(16); setUint16(1); setUint16(numOfChan);
+            setUint32(buffer.sampleRate); setUint32(buffer.sampleRate * 2 * numOfChan);
+            setUint16(numOfChan * 2); setUint16(16);
+            setUint32(0x61746164); setUint32(length - pos - 4);
+
+            for (i = 0; i < buffer.numberOfChannels; i++) channels.push(buffer.getChannelData(i));
+
+            while (offset < buffer.length) {
+                for (i = 0; i < numOfChan; i++) {
+                    sample = Math.max(-1, Math.min(1, channels[i][offset]));
+                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+                    view.setInt16(pos, sample, true); pos += 2;
+                }
+                offset++;
+            }
+            return new Blob([bufferData], { type: "audio/wav" });
+        }
+
+        function downloadCurrentWav() {
+            if (!currentBuffer) return;
+            const wavBlob = audioBufferToWav(currentBuffer);
+            const url = URL.createObjectURL(wavBlob);
+            const a = document.createElement('a');
+            a.style.display = 'none'; a.href = url;
+            a.download = `GiongDocCoTich_Gemini_${new Date().getTime()}.wav`;
+            document.body.appendChild(a); a.click();
+            setTimeout(() => { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
+            showToast('Đang tải tệp âm thanh xuống...');
+        }
+
+    </script>
+</body>
+</html>
